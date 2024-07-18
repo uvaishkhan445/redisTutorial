@@ -1,9 +1,10 @@
 const express = require("express");
 const mysql = require("mysql2");
 const redis = require("redis");
-
+const { Parser } = require("json2csv");
+const fs = require("fs");
 const app = express();
-const port = 3000;
+const port = 4000;
 
 // Create MySQL connection
 const db = mysql.createConnection({
@@ -98,6 +99,38 @@ app.get("/data", async (req, res) => {
   } catch (redisErr) {
     res.status(500).send("Redis query error: " + redisErr);
   }
+});
+
+// Route to generate CSV
+app.get("/download-csv", (req, res) => {
+  db.query("SELECT * FROM contact_us", (err, results, fields) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    const json2csvParser = new Parser();
+    const csv = json2csvParser.parse(results);
+
+    fs.writeFile("data.csv", csv, (err) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.download("data.csv", "data.csv", (err) => {
+        if (err) {
+          console.error("Error downloading the file:", err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Optionally delete the file after download
+        fs.unlink("data.csv", (err) => {
+          if (err) {
+            console.error("Error deleting the file:", err);
+          }
+        });
+      });
+    });
+  });
 });
 
 // Start the Express server
