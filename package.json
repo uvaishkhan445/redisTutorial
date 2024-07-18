@@ -11,8 +11,10 @@
   "description": "",
   "dependencies": {
     "express": "^4.19.2",
+    "html-pdf": "^3.0.1",
     "json2csv": "^6.0.0-alpha.2",
     "mysql2": "^3.10.3",
+    "puppeteer": "^22.13.1",
     "redis": "^4.6.15"
   }
 }

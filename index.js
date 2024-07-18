@@ -3,8 +3,10 @@ const mysql = require("mysql2");
 const redis = require("redis");
 const { Parser } = require("json2csv");
 const fs = require("fs");
+const path = require("path");
+const pdf = require("html-pdf");
 const app = express();
-const port = 4000;
+const port = 5000;
 
 // Create MySQL connection
 const db = mysql.createConnection({
@@ -133,6 +135,91 @@ app.get("/download-csv", (req, res) => {
   });
 });
 
+// Route to generate PDF
+app.get("/download-pdf3", (req, res) => {
+  db.query("SELECT * FROM contact_us", (err, results, fields) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    const html = generateHtml(results);
+    const filePath = path.join(__dirname, "data.pdf");
+
+    pdf.create(html, { format: "A4" }).toFile(filePath, (err, result) => {
+      if (err) {
+        console.error("Error generating the PDF:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.download(filePath, "data.pdf", (err) => {
+        if (err) {
+          console.error("Error downloading the file:", err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Optionally delete the file after download
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error("Error deleting the file:", err);
+          }
+        });
+      });
+    });
+  });
+});
+
+// Generate HTML with data
+function generateHtml(data) {
+  const rows = data
+    .map(
+      (row) => `
+      <tr>
+        <td>${row.id}</td>
+        <td>${row.admin_id}</td>
+        <td>${row.name}</td>
+        <td>${row.mobile_no}</td>
+        <td>${row.email_id}</td>
+        <td>${row.message}</td>
+        <td>${row.date}</td>
+        <td>${row.status}</td>
+      </tr>
+    `
+    )
+    .join("");
+
+  return `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+            th { background-color: #f2f2f2; }
+          </style>
+        </head>
+        <body>
+          <h1>MySQL Data</h1>
+          <table>
+            <thead>
+              <tr>
+               <th>ID</th>
+                <th>Admin Id</th>
+                <th>Name</th>
+                <th>Mobile No.</th>
+                <th>Email</th>
+                <th>Message</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+}
 // Start the Express server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
