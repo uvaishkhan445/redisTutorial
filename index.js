@@ -24,8 +24,8 @@ db.connect((err) => {
 
 // Create Redis client
 const redisClient = redis.createClient({
-  host: "redis-19661.c301.ap-south-1-1.ec2.redns.redis-cloud.com", // Redis server host
-  port: 19661, // Redis server port
+  host: "127.0.0.1", // Redis server host
+  port: 6379, // Redis server port
 });
 
 // Handle Redis connection errors
