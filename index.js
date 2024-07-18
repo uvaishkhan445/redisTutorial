@@ -141,7 +141,7 @@ app.get("/download-pdf3", (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-
+    /// call the function
     const html = generateHtml(results);
     const filePath = path.join(__dirname, "data.pdf");
 
